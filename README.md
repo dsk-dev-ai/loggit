@@ -96,3 +96,5 @@ Have an idea or spotted a quirk? Open an issue or a pull request. Want to add a 
 ## ⭐ Support
 
 If `loggit` saved you a minute of `git log` squinting, **give it a star** ⭐.
+
+Want to help keep it free forever? Consider [becoming a sponsor](https://github.com/sponsors/dsk-dev-ai) on GitHub.

@@ -29,6 +29,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/dsk-dev-ai/loggit"
 Repository = "https://github.com/dsk-dev-ai/loggit"
+Funding = "https://github.com/sponsors/dsk-dev-ai"
 
 [project.scripts]
 loggit = "loggit.cli:main"
