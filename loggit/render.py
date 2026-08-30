@@ -40,11 +40,6 @@ def render_commit(c):
     return "\n".join(lines)
 
 
-def __getattr__(name):
-    # Allow graceful fallback in case color is disabled
-    raise AttributeError(name)
-
-
 def authors_summary(commits):
     """Summarize commit counts per author: [(name, count, added, removed), ...]."""
     agg = {}

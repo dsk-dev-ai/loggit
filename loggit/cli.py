@@ -44,10 +44,12 @@ def build_parser():
     authors_p = sub.add_parser("authors", help="per-author commit/churn summary")
     authors_p.add_argument("-n", "--max-count", type=int, default=40, help="commits to consider")
     authors_p.add_argument("--branch", help="limit to a specific branch")
+    authors_p.add_argument("--no-color", action="store_true", help="disable ANSI colors")
 
     pace_p = sub.add_parser("pace", help="overall stats for the captured window")
     pace_p.add_argument("-n", "--max-count", type=int, default=40, help="commits to consider")
     pace_p.add_argument("--branch", help="limit to a specific branch")
+    pace_p.add_argument("--no-color", action="store_true", help="disable ANSI colors")
 
     json_p = sub.add_parser("json", help="machine-readable log (objects, one per line)")
     json_p.add_argument("-n", "--max-count", type=int, default=40, help="commits to emit")
@@ -56,6 +58,7 @@ def build_parser():
     json_p.add_argument("--author", help="only commits by this author")
     json_p.add_argument("--since", help="only commits since this date/ref")
     json_p.add_argument("--until", help="only commits until this date/ref")
+    json_p.add_argument("--no-color", action="store_true", help="disable ANSI colors")
 
     return p
 
