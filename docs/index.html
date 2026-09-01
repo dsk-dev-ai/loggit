@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>loggit — Your git history, actually readable</title>
+<meta name="description" content="A friendly terminal explorer that turns git log into color, graphs, and answers — zero dependencies.">
+<style>
+  :root { --accent: #22c55e; --accent2: #58a6ff; --bg: #0d1117; --panel: #161b22; --border: #21262d; --text: #e6edf3; --muted: #8b949e; --code-bg: #0a0e14; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  nav { position: sticky; top: 0; z-index: 10; background: rgba(13,17,23,.85); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  nav .container { display: flex; align-items: center; gap: 20px; height: 56px; }
+  nav .logo { font-weight: 700; font-size: 17px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  nav .logo .dot { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  nav a.link { color: var(--muted); font-size: 14px; }
+  nav a.link:hover { color: var(--text); text-decoration: none; }
+  nav .right { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+  header.hero { padding: 56px 0 40px; text-align: center; }
+  header.hero h1 { font-size: 42px; margin: 0 0 12px; letter-spacing: -.02em; }
+  header.hero .tag { color: var(--accent); font-weight: 600; }
+  header.hero p.lead { color: var(--muted); font-size: 18px; margin: 0 auto; max-width: 640px; }
+  header.hero .cta { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 10px 22px; border-radius: 8px; font-weight: 600; font-size: 15px; transition: transform .08s ease; }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #0d1117; }
+  .btn.ghost { border: 1px solid var(--border); color: var(--text); }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .badges img { border-radius: 6px; }
+
+  /* terminal preview */
+  .term { max-width: 620px; margin: 28px auto 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; text-align: left; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+  .term .bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  .term .bar span { width: 12px; height: 12px; border-radius: 50%; }
+  .term .bar span:nth-child(1){ background:#f85149 } .term .bar span:nth-child(2){ background:#f0883e } .term .bar span:nth-child(3){ background:#22c55e }
+  .term .bar .title { margin-left: 8px; color: var(--muted); font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
+  .term pre { margin: 0; border: 0; border-radius: 0; padding: 16px 18px; }
+  .line-hash { color: #f0883e; font-weight: 700; }
+  .line-sub { color: #e6edf3; }
+  .line-meta { color: #8b949e; }
+  .line-add { color: #22c55e; }
+  .line-rem { color: #f85149; }
+
+  section { padding: 40px 0; }
+  section h2 { font-size: 26px; margin: 0 0 20px; letter-spacing: -.01em; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  section h3 { font-size: 19px; margin: 28px 0 10px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: border-color .15s ease; }
+  .card:hover { border-color: var(--accent); }
+  .card .ic { font-size: 22px; }
+  .card h4 { margin: 8px 0 6px; font-size: 16px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace; line-height: 1.55; }
+  code { font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace; }
+  :not(pre) > code { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: .88em; }
+
+  .install { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .install .prompt { color: var(--accent); font-weight: 600; }
+  .install .cmd { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 0 48px; text-align: center; color: var(--muted); font-size: 14px; }
+  footer .hearts { color: #ea4aaa; }
+  footer a { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a class="logo" href="/"><span class="dot"></span> loggit</a>
+    <a class="link" href="#features">Features</a>
+    <a class="link" href="#usage">Usage</a>
+    <a class="link" href="#how">How it works</a>
+    <span class="right">v1.0.1 · MIT · ZERO deps</span>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <h1>Your git history, <span class="tag">actually readable</span> 🪵</h1>
+    <p class="lead">A friendly terminal explorer that turns <code>git log</code> into color, graphs, and answers — commits, authors, churn, and pace. One command, zero dependencies.</p>
+    <div class="cta">
+      <a class="btn primary" href="#usage">Get started</a>
+      <a class="btn ghost" href="https://github.com/dsk-dev-ai/loggit">GitHub</a>
+    </div>
+    <div class="badges">
+      <img src="https://img.shields.io/badge/dependencies-ZERO-22c55e?style=flat-square" alt="zero deps">
+      <img src="https://img.shields.io/pypi/v/loggit?style=flat-square" alt="pypi version">
+      <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT">
+    </div>
+
+    <div class="term">
+      <div class="bar"><span></span><span></span><span></span><span class="title">loggit</span></div>
+<pre>▌ <span style="color:#58a6ff">main</span>
+  <span style="color:#8b949e">17 commits</span>
+
+<span class="line-hash">1000a50</span>  <span class="line-sub">Add Docker/GHCR badge + usage section to README</span>
+    <span style="color:#8b949e">dsk-dev-ai  ·  6m ago</span>
+    <span class="line-add">+14</span>/<span class="line-rem">-0</span> in 1 file(s)</pre>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="container">
+    <h2>Features</h2>
+    <div class="grid">
+      <div class="card"><div class="ic">🎨</div><h4>Pretty output</h4><p>Colored, aligned, compact log view with refs, ages, and authors.</p></div>
+      <div class="card"><div class="ic">👥</div><h4>Author stats</h4><p>Per-developer commit counts and line churn as a bar chart.</p></div>
+      <div class="card"><div class="ic">📈</div><h4>Pace metrics</h4><p>Commits/day, authors, and added/removed lines over any window.</p></div>
+      <div class="card"><div class="ic">🔎</div><h4>Powerful filters</h4><p><code>--grep</code>, <code>--author</code>, <code>--since</code>, <code>--until</code>, <code>--branch</code>.</p></div>
+      <div class="card"><div class="ic">📦</div><h4>Machine-readable</h4><p><code>loggit json</code> for one-line-per-commit JSON.</p></div>
+      <div class="card"><div class="ic">💸</div><h4>100% free</h4><p>Zero dependencies, no AI, no server, no API keys.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="container">
+    <h2>Install</h2>
+    <div class="install"><span class="prompt">$</span><span class="cmd">pip install loggit</span></div>
+    <p style="color:var(--muted);margin-top:12px">No dependencies. No compiled extensions. Python 3.8+ everywhere.</p>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="container">
+    <h2>Usage</h2>
+<pre><code>loggit                        # pretty log of recent commits (default: 40)
+loggit -n 100                 # show more
+loggit --stat                 # add per-commit +added/-removed lines
+loggit --grep "docker"        # only commits mentioning "docker"
+loggit --author "ada"         # only commits by a specific developer
+loggit --since "2 weeks ago"  # recent activity only
+loggit authors                # per-developer commit &amp; churn summary
+loggit pace                   # overall stats + velocity
+loggit json                   # JSON, one object per line (great for scripting)</code></pre>
+    <h3>JSON output</h3>
+<pre><code>loggit json -n 5 > commits.ndjson
+# {"hash": "1000a50", "author": "dsk-dev-ai", "date": "2026-08-31T02:14:39+05:30", "subject": "Add Docker/GHCR badge", "refs": "HEAD -&gt; main"}</code></pre>
+  </div>
+</section>
+
+<section id="how">
+  <div class="container">
+    <h2>How it works</h2>
+    <ol class="steps" style="counter-reset: step; list-style: none; padding-left: 0;">
+      <li style="position: relative; padding: 12px 16px 12px 52px; margin: 8px 0; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; color: var(--muted);"><strong style="color: var(--text);">Runs <code>git log</code></strong> with a stable, machine-friendly pretty-format.</li>
+      <li style="position: relative; padding: 12px 16px 12px 52px; margin: 8px 0; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; color: var(--muted);"><strong style="color: var(--text);">Parses</strong> commits, refs, dates, and message bodies (stdlib only).</li>
+      <li style="position: relative; padding: 12px 16px 12px 52px; margin: 8px 0; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; color: var(--muted);"><strong style="color: var(--text);">Renders</strong> a clean, terminal-aware view — colors auto-disable when piped.</li>
+      <li style="position: relative; padding: 12px 16px 12px 52px; margin: 8px 0; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; color: var(--muted);"><strong style="color: var(--text);">Summarizes</strong> per-author and per-window metrics on demand.</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p><strong>loggit</strong> · stop squinting at git log · <span class="hearts">❤️</span> free &amp; open source · MIT</p>
+    <p><a href="https://github.com/dsk-dev-ai/loggit">GitHub</a> · <a href="https://pypi.org/project/loggit/">PyPI</a> · <a href="https://github.com/sponsors/dsk-dev-ai">Sponsor</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
